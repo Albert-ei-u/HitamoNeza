@@ -32,6 +32,6 @@ export class UsersService {
     }
 
     async findByEmail(email: string){
-        return this.userRepo.findOne({ where: { email }})
+        return this.userRepo.findOne({ where: { email}})
     }
 }
