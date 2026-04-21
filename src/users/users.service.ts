@@ -10,6 +10,7 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private userRepo: Repository<User>,
+        private toSafeUser: (user: User) => any
     ) {}
 
     async createUser(dto: CreateUserDto) {
@@ -28,7 +29,8 @@ export class UsersService {
             email: dto.email,
             password: hashedPassword,
         });
-        return this.userRepo.save(user);
+        const savedUser = await this.userRepo.save(user);
+        return this.toSafeUser(savedUser);
     }
 
     async findByEmail(email: string){
