@@ -10,8 +10,12 @@ export class UsersService {
     constructor(
         @InjectRepository(User)
         private userRepo: Repository<User>,
-        private toSafeUser: (user: User) => any
     ) {}
+
+    private toSafeUser(user: User) {
+        const { password, ...safeUser } = user;
+        return safeUser;
+    }
 
     async createUser(dto: CreateUserDto) {
         const existingUser = await this.userRepo.findOne({
