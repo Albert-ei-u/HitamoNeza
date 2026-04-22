@@ -1,7 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { ConflictException } from '@nestjs/common';
-import * as bcrypt from 'bcrypt';
 import { UsersService } from './users.service';
 import { User } from './user.entity';
 
@@ -39,27 +38,24 @@ describe('UsersService', () => {
     const dto = { name: 'Albert', email: 'a@a.com', password: '123456' };
 
     repo.findOne.mockResolvedValue(null);
-    jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pass' as never);
-
-    repo.create.mockReturnValue({
-      name: dto.name,
-      email: dto.email,
-      password: 'hashed-pass',
-    });
-
-    repo.save.mockResolvedValue({
+    repo.create.mockImplementation((data) => data);
+    repo.save.mockImplementation(async (data) => ({
       id: 1,
-      name: dto.name,
-      email: dto.email,
-      password: 'hashed-pass',
+      ...data,
       createdAt: new Date(),
-    });
+    }));
 
     const result = await service.createUser(dto);
 
     expect(result).toHaveProperty('id');
     expect(result).toHaveProperty('email', dto.email);
     expect(result).not.toHaveProperty('password');
+    expect(repo.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        name: dto.name,
+        email: dto.email,
+      }),
+    );
   });
 
   it('createUser should throw if email already exists', async () => {
