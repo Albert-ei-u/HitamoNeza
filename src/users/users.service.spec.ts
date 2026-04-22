@@ -5,6 +5,8 @@ import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { User } from './user.entity';
 import { before, beforeEach, describe, } from 'node:test';
+import passport from 'passport';
+import { create } from 'domain';
 
 
 describe('UsersService', () => {
@@ -40,6 +42,34 @@ describe('UsersService', () => {
   it('createUser should return a safe user without password', async () => {
     const dto = {name: 'Albert', email: 'albert@example.com', password: '123456'};
 
-  }
+    repo.findOne.mockResolvedValue('hashed-pass' as never);
+    jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pass' as never);
 
+    repo.create.mockReturnValue({
+      name:dto.name,
+      email: dto.email,
+      password: 'hashed-pass',
+    });
+
+    repo.save.mockResolvedValue({
+      id: 1,
+      name: dto.name,
+      email: dto.email,
+      password: 'hashed-pass',
+      createdAt: new Date(),
+    })
+    const result = await service.createUser(dto);
+
+    expect(result).toHaveProperty('id');
+    expect(result).toHaveProperty('email', dto.email);
+    expect(result).not.toHaveProperty('password');
+  })
+
+  it('createUser should throw if email already exists', async () => {
+    repo.findOne.mockResolvedValue({ id: 1, email: 'albert@example.com'});
+
+    await expect(
+      service.createUser({ name: 'Albert', email:'albert@example', password: '123456'})
+    ).rejects.toThrow(ConflictException);
+  });
 });
