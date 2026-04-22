@@ -3,6 +3,11 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { UsersModule } from "./users/users.module";
 import { AuthModule } from "./auth/auth.module";
+import { AiModule } from "./ai/ai.module";
+
+function toBoolean(value: string): boolean {
+  return value.toLowerCase() === "true";
+}
 
 @Module({
   imports: [
@@ -13,17 +18,18 @@ import { AuthModule } from "./auth/auth.module";
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: "postgres",
-        host: config.get<string>("DB_HOST"),
-        port: config.get<number>("DB_PORT"),
-        username: config.get<string>("DB_USER"),
-        password: config.get<string>("DB_PASSWORD"),
-        database: config.get<string>("DB_NAME"),
+        host: config.getOrThrow<string>("DB_HOST"),
+        port: Number.parseInt(config.getOrThrow<string>("DB_PORT"), 10),
+        username: config.getOrThrow<string>("DB_USER"),
+        password: config.getOrThrow<string>("DB_PASSWORD"),
+        database: config.getOrThrow<string>("DB_NAME"),
         autoLoadEntities: true,
-        synchronize: true,
+        synchronize: toBoolean(config.get<string>("DB_SYNC", "false")),
       }),
     }),
     UsersModule,
     AuthModule,
+    AiModule,
   ],
 })
 
