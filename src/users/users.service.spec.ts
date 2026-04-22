@@ -1,13 +1,9 @@
-import { Test, TestingModule, } from '@nestjs/testing';
+import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { UsersService } from './users.service';
 import { ConflictException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { UsersService } from './users.service';
 import { User } from './user.entity';
-import { before, beforeEach, describe, } from 'node:test';
-import passport from 'passport';
-import { create } from 'domain';
-
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -17,8 +13,8 @@ describe('UsersService', () => {
     save: jest.Mock;
   };
 
-  beforeEach(async() => {
-    const repoMock = { 
+  beforeEach(async () => {
+    const repoMock = {
       findOne: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
@@ -27,7 +23,7 @@ describe('UsersService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: getRepositoryToken(User),  useValue: repoMock},
+        { provide: getRepositoryToken(User), useValue: repoMock },
       ],
     }).compile();
 
@@ -39,14 +35,14 @@ describe('UsersService', () => {
     expect(service).toBeDefined();
   });
 
-  it('createUser should return a safe user without password', async () => {
-    const dto = {name: 'Albert', email: 'albert@example.com', password: '123456'};
+  it('createUser should return safe user without password', async () => {
+    const dto = { name: 'Albert', email: 'a@a.com', password: '123456' };
 
-    repo.findOne.mockResolvedValue('hashed-pass' as never);
+    repo.findOne.mockResolvedValue(null);
     jest.spyOn(bcrypt, 'hash').mockResolvedValue('hashed-pass' as never);
 
     repo.create.mockReturnValue({
-      name:dto.name,
+      name: dto.name,
       email: dto.email,
       password: 'hashed-pass',
     });
@@ -57,19 +53,20 @@ describe('UsersService', () => {
       email: dto.email,
       password: 'hashed-pass',
       createdAt: new Date(),
-    })
+    });
+
     const result = await service.createUser(dto);
 
     expect(result).toHaveProperty('id');
     expect(result).toHaveProperty('email', dto.email);
     expect(result).not.toHaveProperty('password');
-  })
+  });
 
   it('createUser should throw if email already exists', async () => {
-    repo.findOne.mockResolvedValue({ id: 1, email: 'albert@example.com'});
+    repo.findOne.mockResolvedValue({ id: 1, email: 'a@a.com' });
 
     await expect(
-      service.createUser({ name: 'Albert', email:'albert@example', password: '123456'})
+      service.createUser({ name: 'Albert', email: 'a@a.com', password: '123456' }),
     ).rejects.toThrow(ConflictException);
   });
 });
